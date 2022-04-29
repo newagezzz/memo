@@ -1,0 +1,273 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    composer.cloud.google.com/running-task: "false"
+    composer.cloud.google.com/template-version: abd80885f0a874cec59ccfa4312cc2bf
+    seccomp.security.alpha.kubernetes.io/pod: runtime/default
+  creationTimestamp: "2022-04-26T08:46:14Z"
+  generateName: airflow-worker-
+  labels:
+    run: airflow-worker
+  name: airflow-worker-s6qxw
+  namespace: composer-2-0-9-airflow-2-2-3-7ee849a0
+  ownerReferences:
+  - apiVersion: composer.cloud.google.com/v1beta1
+    blockOwnerDeletion: true
+    controller: true
+    kind: AirflowWorkerSet
+    name: airflow-worker
+    uid: 63fcd907-805c-46d6-8773-1c66d918d6c4
+  resourceVersion: "390610"
+  uid: 78e4a4b1-fa5d-49a2-8f50-d69bfc7b94a2
+spec:
+  containers:
+  - args:
+    - worker
+    env:
+    - name: GRPC_POLL_STRATEGY
+      value: epoll1
+    - name: CLOUDSDK_METRICS_ENVIRONMENT
+      value: 2.2.3+composer
+    - name: GCS_BUCKET
+      value: asia-northeast1-wqcompenv-7ee849a0-bucket
+    - name: GCP_PROJECT
+      value: weiqiaoprj1
+    - name: COMPOSER_LOCATION
+      value: asia-northeast1
+    - name: COMPOSER_GKE_ZONE
+    - name: COMPOSER_GKE_NAME
+      value: asia-northeast1-wqcompenv-7ee849a0-gke
+    - name: AUTOGKE
+      value: "TRUE"
+    - name: COMPOSER_GKE_LOCATION
+      value: asia-northeast1
+    - name: COMPOSER_PYTHON_VERSION
+      value: "3"
+    - name: COMPOSER_ENVIRONMENT
+      value: wqcompenv
+    - name: COMPOSER_VERSIONED_NAMESPACE
+      value: composer-2-0-9-airflow-2-2-3-7ee849a0
+    - name: AIRFLOW_HOME
+      value: /etc/airflow
+    - name: DAGS_FOLDER
+      value: /home/airflow/gcs/dags
+    - name: SQL_HOST
+      value: airflow-sqlproxy-service.composer-system.svc.cluster.local
+    - name: SQL_DATABASE
+      value: composer-2-0-9-airflow-2-2-3-7ee849a0
+    - name: SQL_USER
+      value: root
+    - name: SQL_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: sql_password
+          name: airflow-secrets
+    - name: GCSFUSE_EXTRACTED
+      value: "TRUE"
+    - name: COMPOSER_VERSION
+      value: 2.0.9
+    - name: AIRFLOW__WEBSERVER__BASE_URL
+      value: https://46061de185014fbda2d87f86233a54b0-dot-asia-northeast1.composer.googleusercontent.com
+    - name: AIRFLOW_DATABASE_VERSION
+      value: POSTGRES_13
+    - name: AIRFLOW__CORE__SQL_ALCHEMY_CONN
+      value: postgresql+psycopg2://$(SQL_USER):$(SQL_PASSWORD)@airflow-sqlproxy-service.composer-system.svc.cluster.local:3306/$(SQL_DATABASE)
+    - name: AIRFLOW__CORE__FERNET_KEY
+      valueFrom:
+        secretKeyRef:
+          key: fernet_key
+          name: airflow-secrets
+    - name: C_FORCE_ROOT
+      value: "TRUE"
+    image: asia-docker.pkg.dev/cloud-airflow-releaser/airflow-worker-scheduler-2-2-3/airflow-worker-scheduler-2-2-3:cloud_composer_service_2022-04-02-RC1
+    imagePullPolicy: IfNotPresent
+    livenessProbe:
+      exec:
+        command:
+        - /var/local/worker_checker.py
+      failureThreshold: 6
+      initialDelaySeconds: 120
+      periodSeconds: 90
+      successThreshold: 1
+      timeoutSeconds: 30
+    name: airflow-worker
+    ports:
+    - containerPort: 8793
+      protocol: TCP
+    resources:
+      limits:
+        cpu: 400m
+        ephemeral-storage: 921Mi
+        memory: 1632Mi
+      requests:
+        cpu: 400m
+        ephemeral-storage: 921Mi
+        memory: 1632Mi
+    securityContext:
+      capabilities:
+        drop:
+        - NET_RAW
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /etc/airflow/airflow_cfg
+      name: airflow-config
+    - mountPath: /home/airflow/gcs
+      name: gcsdir
+    - mountPath: /home/airflow/container-comms
+      name: container-comms
+    - mountPath: /home/airflow/gcsfuse
+      mountPropagation: HostToContainer
+      name: gcsfuse
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-sk7j2
+      readOnly: true
+  - args:
+    - /home/airflow/gcs
+    env:
+    - name: GCS_BUCKET
+      value: asia-northeast1-wqcompenv-7ee849a0-bucket
+    - name: SQL_DATABASE
+      value: composer-2-0-9-airflow-2-2-3-7ee849a0
+    - name: SQL_USER
+      value: root
+    - name: SQL_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          key: sql_password
+          name: airflow-secrets
+    - name: COMPOSER_GKE_ZONE
+    - name: COMPOSER_GKE_NAME
+      value: asia-northeast1-wqcompenv-7ee849a0-gke
+    - name: AUTOGKE
+      value: "TRUE"
+    - name: COMPOSER_GKE_LOCATION
+      value: asia-northeast1
+    image: asia-docker.pkg.dev/cloud-airflow-releaser/gcs-syncd/gcs-syncd:cloud_composer_service_2022-04-02-RC1
+    imagePullPolicy: IfNotPresent
+    name: gcs-syncd
+    resources:
+      limits:
+        cpu: 100m
+        ephemeral-storage: 102Mi
+        memory: 288Mi
+      requests:
+        cpu: 100m
+        ephemeral-storage: 102Mi
+        memory: 288Mi
+    securityContext:
+      capabilities:
+        drop:
+        - NET_RAW
+    terminationMessagePath: /dev/termination-log
+    terminationMessagePolicy: File
+    volumeMounts:
+    - mountPath: /home/airflow/gcs
+      name: gcsdir
+    - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+      name: kube-api-access-sk7j2
+      readOnly: true
+  dnsPolicy: ClusterFirst
+  enableServiceLinks: true
+  nodeName: gk3-asia-northeast1-wqco-nap-rncj1t4b-495dcb75-2x9g
+  preemptionPolicy: PreemptLowerPriority
+  priority: 0
+  restartPolicy: Always
+  schedulerName: gke.io/optimize-utilization-scheduler
+  securityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  serviceAccount: default
+  serviceAccountName: default
+  terminationGracePeriodSeconds: 3600
+  tolerations:
+  - effect: NoExecute
+    key: node.kubernetes.io/not-ready
+    operator: Exists
+    tolerationSeconds: 300
+  - effect: NoExecute
+    key: node.kubernetes.io/unreachable
+    operator: Exists
+    tolerationSeconds: 300
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: airflow-configmap
+    name: airflow-config
+  - emptyDir: {}
+    name: gcsdir
+  - hostPath:
+      path: /var/composer/gcs_mount_status
+      type: ""
+    name: container-comms
+  - hostPath:
+      path: /var/composer/gcs_mount
+      type: ""
+    name: gcsfuse
+  - name: kube-api-access-sk7j2
+    projected:
+      defaultMode: 420
+      sources:
+      - serviceAccountToken:
+          expirationSeconds: 3607
+          path: token
+      - configMap:
+          items:
+          - key: ca.crt
+            path: ca.crt
+          name: kube-root-ca.crt
+      - downwardAPI:
+          items:
+          - fieldRef:
+              apiVersion: v1
+              fieldPath: metadata.namespace
+            path: namespace
+status:
+  conditions:
+  - lastProbeTime: null
+    lastTransitionTime: "2022-04-26T08:46:15Z"
+    status: "True"
+    type: Initialized
+  - lastProbeTime: null
+    lastTransitionTime: "2022-04-26T08:46:20Z"
+    status: "True"
+    type: Ready
+  - lastProbeTime: null
+    lastTransitionTime: "2022-04-26T08:46:20Z"
+    status: "True"
+    type: ContainersReady
+  - lastProbeTime: null
+    lastTransitionTime: "2022-04-26T08:46:15Z"
+    status: "True"
+    type: PodScheduled
+  containerStatuses:
+  - containerID: containerd://2c8c06dc3c4353d5c011888daa54d7f792640d4e91ef677fcc0862b96c811c5f
+    image: asia-docker.pkg.dev/cloud-airflow-releaser/airflow-worker-scheduler-2-2-3/airflow-worker-scheduler-2-2-3:cloud_composer_service_2022-04-02-RC1
+    imageID: asia-docker.pkg.dev/cloud-airflow-releaser/airflow-worker-scheduler-2-2-3/airflow-worker-scheduler-2-2-3@sha256:6ea7544c16ad2f88206b2c81c6755d3e4421e45b1345c7a449accbf3aa10180c
+    lastState: {}
+    name: airflow-worker
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2022-04-26T08:46:16Z"
+  - containerID: containerd://017039aed235b72cb60fbaaae93340d226b16cf324056bc97f4af6e1a266a5b9
+    image: asia-docker.pkg.dev/cloud-airflow-releaser/gcs-syncd/gcs-syncd:cloud_composer_service_2022-04-02-RC1
+    imageID: asia-docker.pkg.dev/cloud-airflow-releaser/gcs-syncd/gcs-syncd@sha256:b96a3a5d780c290c55370f3878f7ec3839bc94970602954a0467cba1e587e506
+    lastState: {}
+    name: gcs-syncd
+    ready: true
+    restartCount: 0
+    started: true
+    state:
+      running:
+        startedAt: "2022-04-26T08:46:20Z"
+  hostIP: 10.146.0.4
+  phase: Running
+  podIP: 10.73.128.136
+  podIPs:
+  - ip: 10.73.128.136
+  qosClass: Guaranteed
+  startTime: "2022-04-26T08:46:15Z"
